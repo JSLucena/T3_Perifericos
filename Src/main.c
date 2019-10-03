@@ -80,6 +80,9 @@ typedef struct
    int hora;
    int min;
    int seg;
+	 int dia;
+   int mes;
+   int ano;
 
 }estrutura2;
 estrutura2 horaData;
@@ -179,6 +182,8 @@ int main(void)
 		BSP_TS_GetState(&TsState);
 		
 		HAL_UART_Receive(&huart1,&dadoRX,1,1000);
+		sprintf(vetor,"%c",dadoRX+'0');
+		BSP_LCD_DisplayStringAtLine(0,(uint8_t*)vetor);
 		
 		if(dadoRX=='h')
 		{
@@ -187,14 +192,31 @@ int main(void)
 			sTime.Hours = horaData.hora;
 			sTime.Minutes = horaData.min;
 			sTime.Seconds = horaData.seg;
+			sDate.Date = horaData.dia;
+			sDate.Month = horaData.mes;
+			sDate.Year = horaData.ano;
 			HAL_RTC_SetTime(&hrtc, &sTime, FORMAT_BIN);
 			HAL_RTC_SetDate(&hrtc, &sDate, FORMAT_BIN);
 			
-			sprintf(usuario.nome, "Joaquim"); //vai vir do cartao
-			HAL_UART_Transmit(&huart1,(uint8_t *)&usuario,sizeof(estrutura),5000); //EXEMPLO PARA ENVIAR A ESTRUTURA 
+	//		sprintf(usuario.nome, "Joaquim"); //vai vir do cartao
+	//		sprintf(usuario.cargo, "Deus");
+	//		sprintf(usuario.matricula, "10101");
+	//		HAL_UART_Transmit(&huart1,(uint8_t *)&usuario,sizeof(estrutura),5000); //EXEMPLO PARA ENVIAR A ESTRUTURA 
 			
 		}
+		else if(dadoRX=='w')
+		{
+			HAL_UART_Receive(&huart1,(uint8_t *)&usuario,sizeof(estrutura),5000);
+			dadoRX = 0;
 		
+		
+		}
+			sprintf(vetor, "%s",usuario.nome);
+		BSP_LCD_DisplayStringAtLine(5,(uint8_t*)vetor);
+		sprintf(vetor, "%s",usuario.cargo);
+		BSP_LCD_DisplayStringAtLine(6,(uint8_t*)vetor);
+		sprintf(vetor, "%s",usuario.matricula);
+		BSP_LCD_DisplayStringAtLine(7,(uint8_t*)vetor);
 	HAL_RTC_GetTime(&hrtc, &sTime, FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &sDate, FORMAT_BIN);
 		sprintf(vetor, "%02d:%02d:%02d",sTime.Hours,sTime.Minutes,sTime.Seconds);
@@ -203,8 +225,7 @@ int main(void)
 		BSP_LCD_DisplayStringAtLine(4,(uint8_t*)vetor);
 		cont++;
 		
-		
-		HAL_Delay(100);
+		//HAL_Delay(500);
 		
 	/*	if(TsState.TouchDetected)
 		{

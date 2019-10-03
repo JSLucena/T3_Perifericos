@@ -23,6 +23,9 @@ typedef struct
    int hora;
    int min;
    int seg;
+   int dia;
+   int mes;
+   int ano;
 
 }estrutura2;
 estrutura2 horaData;
@@ -50,8 +53,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    serial->setPortName("COM1");
-    serial->setBaudRate(9600);
+    serial->setPortName("COM3");
+    serial->setBaudRate(115200);
     serial->setDataBits(static_cast<QSerialPort::DataBits>(8));
     serial->setParity(static_cast<QSerialPort::Parity>(0));
     serial->setStopBits(static_cast<QSerialPort::StopBits>(1));
@@ -77,6 +80,7 @@ void MainWindow::readData()
 {
     char buffer[30];
     int x=0;
+    char teste[60];
  //   const QByteArray data = serial->readAll();
 //   qDebug(data);
 //    ui->lineEdit->setText(data);
@@ -90,7 +94,11 @@ void MainWindow::readData()
     if(serial->bytesAvailable()>=sizeof(estrutura))
     {
         serial->read((char*)&usuario,sizeof(estrutura));
-        ui->lineEdit->setText(usuario.nome);
+       // ui->lineEdit->setText(usuario.nome);
+       // sprintf(teste,"nome: %s\ncargo: %s\nmatricula: %s");
+        ui->testeTXT->setText(usuario.nome);
+        ui->testeTXT2->setText(usuario.cargo);
+        ui->testeTXT3->setText(usuario.matricula);
     }
 }
 
@@ -107,21 +115,32 @@ void MainWindow::on_pushButton_2_clicked()
     if(serial->isOpen())// se porta aberta
     {
         serial->write(buffer,1); //escreve h
-        horaData.hora = 18;
-        horaData.min = 30;
-        horaData.seg = 00;
+        horaData.hora = localTime->tm_hour;
+        horaData.min = localTime->tm_min;
+        horaData.seg = localTime->tm_sec;
+        horaData.dia = localTime->tm_mday;
+        horaData.mes = localTime->tm_mon+1;
+        horaData.ano = localTime->tm_year % 100;
         serial->waitForBytesWritten(500);
         serial->write((char *)&horaData,sizeof(horaData)); //EXEMPLO PARA ENVIAR A ESTRUTURA NO QT
         serial->waitForBytesWritten(500);
-  //      while(bytes<sizeof(estrutura))
- //       {
-  //          bytes=serial->bytesAvailable();
- //       }
-  //      serial->read((char*)&usuario,sizeof(usuario));
 
         msg = ui->lineEdit->text();
-        char c_str2[msg.length()];
-        strcpy(c_str2,msg.toLatin1()); //ou direto => strcpy(usuario.nome,msg.toLatin1());
 
+
+        char c_str2[msg.length()];
+        strcpy(usuario.nome,msg.toLatin1()); //ou direto => strcpy(usuario.nome,msg.toLatin1());
+        msg = ui->CargoEdit->text();
+        strcpy(usuario.cargo,msg.toLatin1());
+        msg = ui->CargoEdit->text();
+        strcpy(usuario.matricula,msg.toLatin1());
+
+
+
+        buffer[0]='w';
+        serial->write(buffer,1);
+        serial->waitForBytesWritten(500);
+        serial->write((char *)&usuario,sizeof(estrutura)); //EXEMPLO PARA ENVIAR A ESTRUTURA NO QT
+        serial->waitForBytesWritten(500);
     }
 }
