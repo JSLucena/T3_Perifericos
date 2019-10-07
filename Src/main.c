@@ -75,27 +75,32 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-typedef struct
-{
-   int hora;
-   int min;
-   int seg;
-	 int dia;
-   int mes;
-   int ano;
+uint8_t vetor[30];
+	int cont=0;
+	TS_StateTypeDef TsState;
+	uint8_t dadoRX;
+	RTC_TimeTypeDef sTime; // estrutura que receberá a hora
+	RTC_DateTypeDef sDate;
+	
 
-}estrutura2;
-estrutura2 horaData;
 
 typedef struct
 {
-char nome[20];
-char cargo[20];
-char matricula[5];
-char hora_entrada[10];
-char data_entrada[10];
-char hora_saida[10];
-char data_saida[10];
+	char cadastrado;
+	char comando;
+	char nome[20];
+	char cargo[20];
+	char matricula[5];
+	char hora_entrada[10];
+	char data_entrada[10];
+	char hora_saida[10];
+	char data_saida[10];
+	int hora;
+	int min;
+	int seg;
+	int dia;
+	int mes;
+	int ano;
 
 } estrutura;
 estrutura usuario;
@@ -105,6 +110,33 @@ estrutura usuario;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+		if(usuario.comando=='h')
+		{
+			
+			sTime.Hours = usuario.hora;
+			sTime.Minutes = usuario.min;
+			sTime.Seconds = usuario.seg;
+			sDate.Date = usuario.dia;
+			sDate.Month = usuario.mes;
+			sDate.Year = usuario.ano;
+			HAL_RTC_SetTime(&hrtc, &sTime, FORMAT_BIN);
+			HAL_RTC_SetDate(&hrtc, &sDate, FORMAT_BIN);
+		//	HAL_UART_Receive_IT(&huart1,&dadoRX,1); 
+	//		sprintf(usuario.nome, "Joaquim"); //vai vir do cartao
+	//		sprintf(usuario.cargo, "Deus");
+	//		sprintf(usuario.matricula, "10101");
+	//		HAL_UART_Transmit(&huart1,(uint8_t *)&usuario,sizeof(estrutura),5000); //EXEMPLO PARA ENVIAR A ESTRUTURA 
+			
+		}
+		else if(usuario.comando=='w')
+		{
+			
+		}
+		HAL_UART_Receive_IT(&huart1,(uint8_t *)&usuario,sizeof(estrutura));
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -120,12 +152,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	
-	uint8_t vetor[30];
-	int cont=0;
-	TS_StateTypeDef TsState;
-	uint8_t dadoRX;
-	RTC_TimeTypeDef sTime; // estrutura que receberá a hora
-	RTC_DateTypeDef sDate;
+	
 
   /* USER CODE END 1 */
 
@@ -165,7 +192,7 @@ int main(void)
 	BSP_LCD_SetTextColor(LCD_COLOR_RED);
 	BSP_LCD_DisplayStringAtLine(1,(uint8_t*)"TESTE LINHA 1");
 	BSP_TS_Init(240, 320);
-
+	HAL_UART_Receive_IT(&huart1,(uint8_t *)&usuario,sizeof(estrutura)); 
 
   /* USER CODE END 2 */
 
@@ -179,39 +206,13 @@ int main(void)
 		
 		//sprintf((char*)vetor,"Contador=%d",cont);
 	//	BSP_LCD_DisplayStringAtLine(2,(uint8_t*)vetor);
-		BSP_TS_GetState(&TsState);
-		
-		HAL_UART_Receive(&huart1,&dadoRX,1,1000);
-		sprintf(vetor,"%c",dadoRX+'0');
-		BSP_LCD_DisplayStringAtLine(0,(uint8_t*)vetor);
-		
-		if(dadoRX=='h')
-		{
-			HAL_UART_Receive(&huart1,(uint8_t *)&horaData,sizeof(horaData),5000); //EXEMPLO PARA RECEBER A ESTRUTURA
-			dadoRX = 0;
-			sTime.Hours = horaData.hora;
-			sTime.Minutes = horaData.min;
-			sTime.Seconds = horaData.seg;
-			sDate.Date = horaData.dia;
-			sDate.Month = horaData.mes;
-			sDate.Year = horaData.ano;
-			HAL_RTC_SetTime(&hrtc, &sTime, FORMAT_BIN);
-			HAL_RTC_SetDate(&hrtc, &sDate, FORMAT_BIN);
-			
-	//		sprintf(usuario.nome, "Joaquim"); //vai vir do cartao
-	//		sprintf(usuario.cargo, "Deus");
-	//		sprintf(usuario.matricula, "10101");
-	//		HAL_UART_Transmit(&huart1,(uint8_t *)&usuario,sizeof(estrutura),5000); //EXEMPLO PARA ENVIAR A ESTRUTURA 
-			
-		}
-		else if(dadoRX=='w')
-		{
-			HAL_UART_Receive(&huart1,(uint8_t *)&usuario,sizeof(estrutura),5000);
-			dadoRX = 0;
+		//BSP_TS_GetState(&TsState);
 		
 		
-		}
-			sprintf(vetor, "%s",usuario.nome);
+		//sprintf(vetor,"%c",dadoRX);
+		//BSP_LCD_DisplayStringAtLine(0,(uint8_t*)vetor);
+		
+	sprintf(vetor, "%s",usuario.nome); 
 		BSP_LCD_DisplayStringAtLine(5,(uint8_t*)vetor);
 		sprintf(vetor, "%s",usuario.cargo);
 		BSP_LCD_DisplayStringAtLine(6,(uint8_t*)vetor);
@@ -223,6 +224,7 @@ int main(void)
 		BSP_LCD_DisplayStringAtLine(3,(uint8_t*)vetor);
 		sprintf(vetor, "%02d/%02d/%02d",sDate.Date,sDate.Month,sDate.Year);
 		BSP_LCD_DisplayStringAtLine(4,(uint8_t*)vetor);
+		
 		cont++;
 		
 		//HAL_Delay(500);

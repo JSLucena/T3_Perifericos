@@ -7,28 +7,25 @@
 
 typedef struct
 {
-char nome[20];
-char cargo[20];
-char matricula[5];
-char hora_entrada[10];
-char data_entrada[10];
-char hora_saida[10];
-char data_saida[10];
+    char cadastrado;
+    char comando;
+    char nome[20];
+    char cargo[20];
+    char matricula[5];
+    char hora_entrada[10];
+    char data_entrada[10];
+    char hora_saida[10];
+    char data_saida[10];
+    int hora;
+    int min;
+    int seg;
+    int dia;
+    int mes;
+    int ano;
 
 } estrutura;
 estrutura usuario;
 
-typedef struct
-{
-   int hora;
-   int min;
-   int seg;
-   int dia;
-   int mes;
-   int ano;
-
-}estrutura2;
-estrutura2 horaData;
 
 QTimer *timer = new QTimer(); //cria novo timer
 
@@ -53,8 +50,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_pushButton_clicked()
 {
-    serial->setPortName("COM3");
-    serial->setBaudRate(115200);
+    serial->setPortName("COM10");
+    serial->setBaudRate(9600);
     serial->setDataBits(static_cast<QSerialPort::DataBits>(8));
     serial->setParity(static_cast<QSerialPort::Parity>(0));
     serial->setStopBits(static_cast<QSerialPort::StopBits>(1));
@@ -74,7 +71,7 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::timer_teste()
 {
-    qDebug("Entra nesta função a cada 1s");
+    //qDebug("Entra nesta função a cada 1s");
 }
 void MainWindow::readData()
 {
@@ -96,9 +93,7 @@ void MainWindow::readData()
         serial->read((char*)&usuario,sizeof(estrutura));
        // ui->lineEdit->setText(usuario.nome);
        // sprintf(teste,"nome: %s\ncargo: %s\nmatricula: %s");
-        ui->testeTXT->setText(usuario.nome);
-        ui->testeTXT2->setText(usuario.cargo);
-        ui->testeTXT3->setText(usuario.matricula);
+
     }
 }
 
@@ -107,40 +102,56 @@ void MainWindow::on_pushButton_2_clicked()
     QString msg;
     char buffer[30];
     int bytes = 0;
-    buffer[0]='h';
+    usuario.comando ='h';
 
     time(&segundos);
     localTime = localtime(&segundos);
 
     if(serial->isOpen())// se porta aberta
     {
-        serial->write(buffer,1); //escreve h
-        horaData.hora = localTime->tm_hour;
-        horaData.min = localTime->tm_min;
-        horaData.seg = localTime->tm_sec;
-        horaData.dia = localTime->tm_mday;
-        horaData.mes = localTime->tm_mon+1;
-        horaData.ano = localTime->tm_year % 100;
-        serial->waitForBytesWritten(500);
-        serial->write((char *)&horaData,sizeof(horaData)); //EXEMPLO PARA ENVIAR A ESTRUTURA NO QT
-        serial->waitForBytesWritten(500);
+        usuario.hora = localTime->tm_hour;
+        usuario.min = localTime->tm_min;
+        usuario.seg = localTime->tm_sec;
+        usuario.dia = localTime->tm_mday;
+        usuario.mes = localTime->tm_mon+1;
+        usuario.ano = localTime->tm_year % 100; //escreve h
 
+
+         qDebug() <<"Trasnmit" << serial->write((char *)&usuario,sizeof(usuario)); //EXEMPLO PARA ENVIAR A ESTRUTURA NO QT
+        serial->waitForBytesWritten(500);
         msg = ui->lineEdit->text();
-
-
         char c_str2[msg.length()];
         strcpy(usuario.nome,msg.toLatin1()); //ou direto => strcpy(usuario.nome,msg.toLatin1());
         msg = ui->CargoEdit->text();
         strcpy(usuario.cargo,msg.toLatin1());
-        msg = ui->CargoEdit->text();
+        msg = ui->MatriculaEdit->text();
         strcpy(usuario.matricula,msg.toLatin1());
-
-
-
-        buffer[0]='w';
-        serial->write(buffer,1);
+       usuario.comando='w';
+        qDebug(usuario.nome);
+        qDebug(usuario.cargo);
+        qDebug(usuario.matricula);
+         qDebug() <<"Trasnmit" <<serial->write((char *)&usuario,sizeof(estrutura)); //EXEMPLO PARA ENVIAR A ESTRUTURA NO QT
         serial->waitForBytesWritten(500);
-        serial->write((char *)&usuario,sizeof(estrutura)); //EXEMPLO PARA ENVIAR A ESTRUTURA NO QT
-        serial->waitForBytesWritten(500);
+    }
+}
+
+void MainWindow::on_conecta_clicked()
+{
+    serial->setPortName("COM10");
+    serial->setBaudRate(9600);
+    serial->setDataBits(static_cast<QSerialPort::DataBits>(8));
+    serial->setParity(static_cast<QSerialPort::Parity>(0));
+    serial->setStopBits(static_cast<QSerialPort::StopBits>(1));
+    serial->setFlowControl(static_cast<QSerialPort::FlowControl>(0));
+    if (serial->open(QIODevice::ReadWrite))
+    {
+        qDebug("Porta Aberta");
+        ui->label->setText("Status da Porta : ABERTA");
+        timer->start(1000);
+    }
+    else
+    {
+        qDebug("Não Abriu");
+        ui->label->setText("Status da Porta : FECHADA");
     }
 }
