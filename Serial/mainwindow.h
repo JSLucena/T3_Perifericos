@@ -24,6 +24,14 @@ private slots:
 
     void on_conecta_clicked();
 
+    void on_leCartao_clicked();
+
+    void on_apagaCartao_clicked();
+
+    void on_cadastrar_clicked();
+
+    void on_ativa_clicked();
+
 private:
     Ui::MainWindow *ui;
     QSerialPort *serial;

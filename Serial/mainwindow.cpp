@@ -4,7 +4,7 @@
 #include <QtDebug>
 #include <QTimer>
 #include <time.h>
-
+#include <QMessageBox>
 typedef struct
 {
     char cadastrado;
@@ -48,30 +48,18 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_pushButton_clicked()
-{
-    serial->setPortName("COM10");
-    serial->setBaudRate(9600);
-    serial->setDataBits(static_cast<QSerialPort::DataBits>(8));
-    serial->setParity(static_cast<QSerialPort::Parity>(0));
-    serial->setStopBits(static_cast<QSerialPort::StopBits>(1));
-    serial->setFlowControl(static_cast<QSerialPort::FlowControl>(0));
-    if (serial->open(QIODevice::ReadWrite))
-    {
-        qDebug("Porta Aberta");
-        ui->label->setText("Status da Porta : ABERTA");
-        timer->start(1000);
-    }
-    else
-    {
-        qDebug("Não Abriu");
-        ui->label->setText("Status da Porta : FECHADA");
-    }
-}
 
 void MainWindow::timer_teste()
 {
     //qDebug("Entra nesta função a cada 1s");
+    if(usuario.cadastrado == 's')
+    {
+        ui->cadastrado->setText("Usuario cadastrado");
+    }
+    else
+    {
+        ui->cadastrado->setText("Usuario não cadastrado");
+    }
 }
 void MainWindow::readData()
 {
@@ -102,23 +90,15 @@ void MainWindow::on_pushButton_2_clicked()
     QString msg;
     char buffer[30];
     int bytes = 0;
-    usuario.comando ='h';
 
-    time(&segundos);
-    localTime = localtime(&segundos);
 
     if(serial->isOpen())// se porta aberta
     {
-        usuario.hora = localTime->tm_hour;
-        usuario.min = localTime->tm_min;
-        usuario.seg = localTime->tm_sec;
-        usuario.dia = localTime->tm_mday;
-        usuario.mes = localTime->tm_mon+1;
-        usuario.ano = localTime->tm_year % 100; //escreve h
 
 
-         qDebug() <<"Trasnmit" << serial->write((char *)&usuario,sizeof(usuario)); //EXEMPLO PARA ENVIAR A ESTRUTURA NO QT
-        serial->waitForBytesWritten(500);
+
+         //EXEMPLO PARA ENVIAR A ESTRUTURA NO QT
+
         msg = ui->lineEdit->text();
         char c_str2[msg.length()];
         strcpy(usuario.nome,msg.toLatin1()); //ou direto => strcpy(usuario.nome,msg.toLatin1());
@@ -148,10 +128,139 @@ void MainWindow::on_conecta_clicked()
         qDebug("Porta Aberta");
         ui->label->setText("Status da Porta : ABERTA");
         timer->start(1000);
+
+
+
+        usuario.comando ='h';
+        time(&segundos);
+        localTime = localtime(&segundos);
+        usuario.hora = localTime->tm_hour;
+        usuario.min = localTime->tm_min;
+        usuario.seg = localTime->tm_sec;
+        usuario.dia = localTime->tm_mday;
+        usuario.mes = localTime->tm_mon+1;
+        usuario.ano = localTime->tm_year % 100; //escreve h
+        qDebug() <<"Trasnmit" << serial->write((char *)&usuario,sizeof(usuario));
+        serial->waitForBytesWritten(500);
+
     }
     else
     {
         qDebug("Não Abriu");
         ui->label->setText("Status da Porta : FECHADA");
     }
+}
+
+void MainWindow::on_leCartao_clicked()
+{
+    if(serial->isOpen())
+    {
+        usuario.comando ='l';
+        qDebug() <<"Trasnmit" << serial->write((char *)&usuario,sizeof(usuario));
+        serial->waitForBytesWritten(500);
+
+        if(serial->bytesAvailable()>=sizeof(estrutura))
+        {
+            serial->read((char*)&usuario,sizeof(estrutura));
+        }
+    }
+    if(usuario.cadastrado == 's')
+    {
+        ui->HoraEntrada->setText(usuario.hora_entrada);
+        ui->HoraSaida->setText(usuario.hora_saida);
+        ui->DataEntrada->setText(usuario.data_entrada);
+        ui->DataSaida->setText(usuario.data_saida);
+        ui->lineEdit->setText(usuario.nome);
+        ui->CargoEdit->setText(usuario.cargo);
+        ui->MatriculaEdit->setText(usuario.matricula);
+
+    }
+}
+
+void MainWindow::on_apagaCartao_clicked()
+{
+    if(serial->isOpen())
+    {
+        usuario.comando = 'a';
+        usuario.cadastrado = 'n';
+        strcpy(usuario.nome ,"");
+        strcpy(usuario.cargo ,"");
+        strcpy(usuario.matricula ,"");
+        strcpy(usuario.hora_entrada ,"");
+        strcpy(usuario.hora_saida ,"");
+        strcpy(usuario.data_entrada ,"");
+        strcpy(usuario.data_saida ,"");
+        usuario.hora = 0;
+        usuario.min = 0;
+        usuario.seg = 0;
+        usuario.dia = 0;
+        usuario.mes = 0;
+        usuario.ano = 0;
+        serial->write((char *)&usuario,sizeof(usuario));
+        serial->waitForBytesWritten(500);
+
+    }
+}
+
+void MainWindow::on_cadastrar_clicked()
+{
+    QString msg;
+    msg = ui->lineEdit->text();
+    char c_str2[msg.length()];
+    strcpy(usuario.nome,msg.toLatin1()); //ou direto => strcpy(usuario.nome,msg.toLatin1());
+    msg = ui->CargoEdit->text();
+    strcpy(usuario.cargo,msg.toLatin1());
+    msg = ui->MatriculaEdit->text();
+    strcpy(usuario.matricula,msg.toLatin1());
+    usuario.cadastrado = 's';
+    usuario.comando = 'c';
+    serial->write((char *)&usuario,sizeof(usuario));
+    serial->waitForBytesWritten(500);
+}
+
+void MainWindow::on_ativa_clicked()
+{
+    QMessageBox msgBox;
+       QPushButton *entrar = msgBox.addButton(tr("Entrar"), QMessageBox::ActionRole);
+       QPushButton *sair = msgBox.addButton(tr("Sair"), QMessageBox::ActionRole);
+
+       msgBox.setWindowTitle("Entrando ou Saindo?");
+
+       msgBox.exec();
+
+       time(&segundos);
+       localTime = localtime(&segundos);
+
+       char str[100];
+       sprintf(str,"%02d:%02d:%02d", localTime->tm_hour,localTime->tm_min, localTime->tm_sec);
+
+
+
+       sprintf(str,"%02d:%02d:%02d", localTime->tm_mday, localTime->tm_mon, localTime->tm_year%100);
+
+       usuario.comando = 'm';
+
+       if(msgBox.clickedButton() == entrar)
+       {
+           strcpy(usuario.hora_entrada,str);
+           strcpy(usuario.data_entrada,str);
+           ui->HoraEntrada->setText(usuario.hora_entrada);
+           ui->DataEntrada->setText(usuario.data_entrada);
+
+           qDebug() << "entrando";
+
+
+
+       }
+       else if(msgBox.clickedButton() == sair)
+       {
+           qDebug() << "saindo";
+           strcpy(usuario.hora_saida,str);
+           strcpy(usuario.data_saida,str);
+            ui->HoraSaida->setText(usuario.hora_saida);
+            ui->DataSaida->setText(usuario.data_saida);
+
+       }
+       serial->write((char *)&usuario,sizeof(usuario));
+       serial->waitForBytesWritten(500);
 }
