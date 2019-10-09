@@ -11,7 +11,7 @@ typedef struct
     char comando;
     char nome[20];
     char cargo[20];
-    char matricula[5];
+    char matricula[10];
     char hora_entrada[10];
     char data_entrada[10];
     char hora_saida[10];
@@ -78,7 +78,7 @@ void MainWindow::readData()
 
     if(serial->bytesAvailable()>=sizeof(estrutura))
     {
-        serial->read((char*)&usuario,sizeof(estrutura));
+     qDebug() <<"receive"<<   serial->read((char*)&usuario,sizeof(estrutura));
        // ui->lineEdit->setText(usuario.nome);
        // sprintf(teste,"nome: %s\ncargo: %s\nmatricula: %s");
 
@@ -117,7 +117,7 @@ void MainWindow::on_pushButton_2_clicked()
 
 void MainWindow::on_conecta_clicked()
 {
-    serial->setPortName("COM10");
+    serial->setPortName("COM3");
     serial->setBaudRate(9600);
     serial->setDataBits(static_cast<QSerialPort::DataBits>(8));
     serial->setParity(static_cast<QSerialPort::Parity>(0));
@@ -159,10 +159,10 @@ void MainWindow::on_leCartao_clicked()
         qDebug() <<"Trasnmit" << serial->write((char *)&usuario,sizeof(usuario));
         serial->waitForBytesWritten(500);
 
-        if(serial->bytesAvailable()>=sizeof(estrutura))
-        {
-            serial->read((char*)&usuario,sizeof(estrutura));
-        }
+   //     if(serial->bytesAvailable()>=sizeof(estrutura))
+  //      {
+    //        serial->read((char*)&usuario,sizeof(estrutura));
+   //     }
     }
     if(usuario.cadastrado == 's')
     {
@@ -213,7 +213,7 @@ void MainWindow::on_cadastrar_clicked()
     msg = ui->MatriculaEdit->text();
     strcpy(usuario.matricula,msg.toLatin1());
     usuario.cadastrado = 's';
-    usuario.comando = 'c';
+    usuario.comando = 'w';
     serial->write((char *)&usuario,sizeof(usuario));
     serial->waitForBytesWritten(500);
 }
@@ -231,19 +231,19 @@ void MainWindow::on_ativa_clicked()
        time(&segundos);
        localTime = localtime(&segundos);
 
-       char str[100];
+       char str[100],str2[100];
        sprintf(str,"%02d:%02d:%02d", localTime->tm_hour,localTime->tm_min, localTime->tm_sec);
 
 
 
-       sprintf(str,"%02d:%02d:%02d", localTime->tm_mday, localTime->tm_mon, localTime->tm_year%100);
+       sprintf(str2,"%02d/%02d/%02d", localTime->tm_mday, localTime->tm_mon, localTime->tm_year%100);
 
        usuario.comando = 'm';
 
        if(msgBox.clickedButton() == entrar)
        {
            strcpy(usuario.hora_entrada,str);
-           strcpy(usuario.data_entrada,str);
+           strcpy(usuario.data_entrada,str2);
            ui->HoraEntrada->setText(usuario.hora_entrada);
            ui->DataEntrada->setText(usuario.data_entrada);
 
@@ -256,7 +256,7 @@ void MainWindow::on_ativa_clicked()
        {
            qDebug() << "saindo";
            strcpy(usuario.hora_saida,str);
-           strcpy(usuario.data_saida,str);
+           strcpy(usuario.data_saida,str2);
             ui->HoraSaida->setText(usuario.hora_saida);
             ui->DataSaida->setText(usuario.data_saida);
 

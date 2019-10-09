@@ -90,7 +90,7 @@ typedef struct
 	char comando;
 	char nome[20];
 	char cargo[20];
-	char matricula[5];
+	char matricula[10];
 	char hora_entrada[10];
 	char data_entrada[10];
 	char hora_saida[10];
@@ -129,11 +129,27 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	//		sprintf(usuario.cargo, "Deus");
 	//		sprintf(usuario.matricula, "10101");
 	//		HAL_UART_Transmit(&huart1,(uint8_t *)&usuario,sizeof(estrutura),5000); //EXEMPLO PARA ENVIAR A ESTRUTURA 
-			
+			usuario.comando = 0;
 		}
-		else if(usuario.comando=='w')
+		else if(usuario.comando=='w' || usuario.comando == 'a')
 		{
-			
+				uint8_t dado[sizeof(usuario)];
+				memcpy(dado,(uint8_t*)&usuario,sizeof(estrutura));
+				int endereco = 0;
+
+			for(int i = 0; i<sizeof(dado); i++)
+			{
+				endereco = i;
+				HAL_I2C_Mem_Write(&hi2c3,0xa0,endereco,I2C_MEMADD_SIZE_8BIT,&dado[i],1,500);
+				HAL_Delay(10);
+				
+			}
+			usuario.comando = 0;
+		}
+		else if(usuario.comando == 'l')
+		{
+			 HAL_I2C_Mem_Read(&hi2c3,0xa1,0,I2C_MEMADD_SIZE_8BIT,(uint8_t*)&usuario,sizeof(usuario),1000);
+			usuario.comando = 0;
 		}
 		HAL_UART_Receive_IT(&huart1,(uint8_t *)&usuario,sizeof(estrutura));
 }
@@ -224,7 +240,7 @@ int main(void)
 		BSP_LCD_DisplayStringAtLine(3,(uint8_t*)vetor);
 		sprintf(vetor, "%02d/%02d/%02d",sDate.Date,sDate.Month,sDate.Year);
 		BSP_LCD_DisplayStringAtLine(4,(uint8_t*)vetor);
-		
+		BSP_LCD_DisplayStringAtLine(10,(uint8_t*)cont);
 		cont++;
 		
 		//HAL_Delay(500);
