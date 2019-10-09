@@ -81,8 +81,22 @@ void MainWindow::readData()
      qDebug() <<"receive"<<   serial->read((char*)&usuario,sizeof(estrutura));
        // ui->lineEdit->setText(usuario.nome);
        // sprintf(teste,"nome: %s\ncargo: %s\nmatricula: %s");
+     if(usuario.cadastrado == 's')
+     {
+         ui->HoraEntrada->setText(usuario.hora_entrada);
+         ui->HoraSaida->setText(usuario.hora_saida);
+         ui->DataEntrada->setText(usuario.data_entrada);
+         ui->DataSaida->setText(usuario.data_saida);
+         ui->lineEdit->setText(usuario.nome);
+         ui->CargoEdit->setText(usuario.cargo);
+         ui->MatriculaEdit->setText(usuario.matricula);
+         QString file = "C:\\Users\\17103269\\Desktop\\T3_Perifericos\\Serial\\img\\" + QString::fromLocal8Bit(usuario.matricula)+".jpg";
+         ui->image->setPixmap((QPixmap(QString(file))));
+
+     }
 
     }
+
 }
 
 void MainWindow::on_pushButton_2_clicked()
@@ -117,7 +131,7 @@ void MainWindow::on_pushButton_2_clicked()
 
 void MainWindow::on_conecta_clicked()
 {
-    serial->setPortName("COM3");
+    serial->setPortName("COM11");
     serial->setBaudRate(9600);
     serial->setDataBits(static_cast<QSerialPort::DataBits>(8));
     serial->setParity(static_cast<QSerialPort::Parity>(0));
@@ -140,6 +154,7 @@ void MainWindow::on_conecta_clicked()
         usuario.dia = localTime->tm_mday;
         usuario.mes = localTime->tm_mon+1;
         usuario.ano = localTime->tm_year % 100; //escreve h
+        serial->waitForBytesWritten(500);
         qDebug() <<"Trasnmit" << serial->write((char *)&usuario,sizeof(usuario));
         serial->waitForBytesWritten(500);
 
@@ -164,6 +179,9 @@ void MainWindow::on_leCartao_clicked()
     //        serial->read((char*)&usuario,sizeof(estrutura));
    //     }
     }
+
+
+    /*
     if(usuario.cadastrado == 's')
     {
         ui->HoraEntrada->setText(usuario.hora_entrada);
@@ -175,6 +193,7 @@ void MainWindow::on_leCartao_clicked()
         ui->MatriculaEdit->setText(usuario.matricula);
 
     }
+    */
 }
 
 void MainWindow::on_apagaCartao_clicked()
@@ -214,6 +233,7 @@ void MainWindow::on_cadastrar_clicked()
     strcpy(usuario.matricula,msg.toLatin1());
     usuario.cadastrado = 's';
     usuario.comando = 'w';
+    serial->waitForBytesWritten(500);
     serial->write((char *)&usuario,sizeof(usuario));
     serial->waitForBytesWritten(500);
 }
@@ -238,7 +258,7 @@ void MainWindow::on_ativa_clicked()
 
        sprintf(str2,"%02d/%02d/%02d", localTime->tm_mday, localTime->tm_mon, localTime->tm_year%100);
 
-       usuario.comando = 'm';
+       usuario.comando = 'w';
 
        if(msgBox.clickedButton() == entrar)
        {
@@ -246,7 +266,14 @@ void MainWindow::on_ativa_clicked()
            strcpy(usuario.data_entrada,str2);
            ui->HoraEntrada->setText(usuario.hora_entrada);
            ui->DataEntrada->setText(usuario.data_entrada);
-
+           if ( usuario.cadastrado == 's')
+           {
+            ui->Status->setText("ENTRADA LIBERADA");
+           }
+           else
+           {
+               ui->Status->setText("ACESSO NEGADO");
+           }
            qDebug() << "entrando";
 
 
@@ -260,7 +287,18 @@ void MainWindow::on_ativa_clicked()
             ui->HoraSaida->setText(usuario.hora_saida);
             ui->DataSaida->setText(usuario.data_saida);
 
+            if ( usuario.cadastrado == 's')
+            {
+             ui->Status->setText("SAIDA LIBERADA");
+            }
+            else
+            {
+                ui->Status->setText("ACESSO NEGADO");
+            }
+
        }
-       serial->write((char *)&usuario,sizeof(usuario));
+
+      qDebug() << "mandei" << serial->write((char *)&usuario,sizeof(usuario));
        serial->waitForBytesWritten(500);
+
 }
